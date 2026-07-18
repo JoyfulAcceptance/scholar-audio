@@ -1,0 +1,44 @@
+# Scholar Audio Project Plan
+
+## Goal
+
+Build a local Mac tool that converts PDFs/articles into listenable audio packets using macOS native voices.
+
+## MVP
+
+- Local web page with drag-and-drop upload.
+- Voice and rate controls.
+- PDF/text extraction.
+- Basic listening-text cleanup.
+- Section splitting.
+- `say` rendering.
+- `.m4a` output per section.
+- Optional `.m4b` assembly if time allows.
+- Output folder with README.
+
+## Demo Script
+
+1. Show a dense research paper.
+2. Drop it into Scholar Audio.
+3. Choose voice and rate.
+4. Watch pipeline progress.
+5. Play generated audio.
+6. Show output packet.
+
+## Build Priorities
+
+1. Working PDF-to-audio path.
+2. Drag-and-drop local interface.
+3. Reliable progress display.
+4. Listening-text cleanup.
+5. Chaptered output.
+6. `.m4b` single-file audiobook.
+
+## Non-Goals For MVP
+
+- Cloud TTS.
+- Native Mac App Store package.
+- Perfect citation cleanup.
+- OCR for scanned PDFs.
+- Public hosting of copyrighted source papers.
+

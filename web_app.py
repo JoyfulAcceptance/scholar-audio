@@ -68,7 +68,7 @@ def run_job(job_id: str, source: Path, output: Path, voice: str, rate: int) -> N
         files = [
             {"name": path.name, "url": f"/packets/{job_id}/{path.name}"}
             for path in sorted(output.iterdir())
-            if path.is_file() and path.suffix.lower() in {".m4a", ".m4b", ".txt", ".md", ".zip"}
+            if path.is_file() and path.suffix.lower() in {".m4b", ".zip"}
         ]
         update_job(job_id, status="complete", message="Your listening packet is ready.", files=files)
     except (ScholarAudioError, OSError, UnicodeError) as exc:
@@ -110,16 +110,17 @@ class ScholarAudioHandler(BaseHTTPRequestHandler):
         if not path.is_file():
             self.send_error(HTTPStatus.NOT_FOUND)
             return
-        payload = path.read_bytes()
         mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", mime)
-        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Content-Length", str(path.stat().st_size))
         self.send_header("Cache-Control", "no-store")
         if download:
             self.send_header("Content-Disposition", f'attachment; filename="{path.name}"')
         self.end_headers()
-        self.wfile.write(payload)
+        with path.open("rb") as source:
+            while chunk := source.read(64 * 1024):
+                self.wfile.write(chunk)
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
@@ -273,6 +274,8 @@ class ScholarAudioHandler(BaseHTTPRequestHandler):
                 raise ScholarAudioError("Scholar Audio accepts PDF, Markdown, and text files.")
             voice = form.getfirst("voice", default_voice()).strip()
             rate = int(form.getfirst("rate", "130"))
+            if voice not in available_voices():
+                raise ScholarAudioError("That Mac voice is not installed.")
             if not 80 <= rate <= 400:
                 raise ScholarAudioError("Speaking rate must be between 80 and 400.")
 

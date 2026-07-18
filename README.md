@@ -25,7 +25,7 @@ The hackathon MVP is a local Mac web app:
 
 ## Current Status
 
-The first command-line pipeline is working. It accepts text-based PDFs and text files, prepares section text for listening, and renders named `.m4a` chapter tracks locally.
+The first complete local pipeline and browser interface are working. Scholar Audio accepts text-based PDFs, Markdown, and plain-text files; prepares section text for listening; renders named `.m4a` chapter tracks locally; assembles a chaptered `.m4b`; and offers two clear downloads: the audiobook alone or a ZIP containing the source, audiobook, and listening-packet README.
 
 The underlying workflow has already been tested manually on AI/HCI research papers using:
 
@@ -82,6 +82,14 @@ The MVP supports text-based PDFs, Markdown, and plain text. If a PDF is a scan, 
 The selected speaking rate is the baseline. Scholar Audio prepares difficult material for the ear by slowing new terms to 90% of that rate, dense sentences to 85%, and very dense sentences to 77%, then explicitly returning to the selected rate. It adds documented macOS `say` silence cues after difficult material and around structural transitions. Pauses scale gently from the 130 WPM baseline using `sqrt(130 / selected_rate)`, constrained to 75–135%.
 
 This pacing system is covered by regression tests in `tests/test_pacing.py`.
+
+Run the complete fast test suite from the repository root:
+
+```bash
+python3 -m unittest discover -v
+```
+
+The tests do not render real audio.
 
 ## Run the Local Interface
 

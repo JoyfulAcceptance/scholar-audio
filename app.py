@@ -13,6 +13,7 @@ import tempfile
 import zipfile
 from collections import Counter
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence, Tuple
 
@@ -398,6 +399,7 @@ def prepare_preview_text(source: Path, rate: int, word_limit: int = 80) -> str:
     return prepare_spoken_section(preview_section, rate, front_matter)
 
 
+@lru_cache(maxsize=1)
 def available_voices() -> List[str]:
     result = subprocess.run(["say", "-v", "?"], check=True, capture_output=True, text=True)
     voices: List[str] = []
@@ -452,9 +454,19 @@ def audio_duration(audio_file: Path) -> float:
     ]
     try:
         result = subprocess.run(run_command, check=True, capture_output=True, text=True)
+    except FileNotFoundError as exc:
+        raise ScholarAudioError("Could not measure an audio chapter: 'ffprobe' is not installed.") from exc
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or exc.stdout or "unknown ffprobe error").strip()
+        raise ScholarAudioError(f"Could not measure audio chapter '{audio_file.name}': {detail}") from exc
+    try:
         return float(result.stdout.strip())
-    except (FileNotFoundError, subprocess.CalledProcessError, ValueError) as exc:
-        raise ScholarAudioError("Could not measure an audio chapter for audiobook assembly.") from exc
+    except ValueError as exc:
+        detail = result.stdout.strip()
+        raise ScholarAudioError(
+            f"Could not measure audio chapter '{audio_file.name}': "
+            f"ffprobe returned an invalid duration{f' ({detail})' if detail else ''}."
+        ) from exc
 
 
 def ffmetadata_escape(value: str) -> str:
@@ -624,7 +636,8 @@ def build_packet(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Turn a scholarly PDF or text file into a local listening packet.")
     parser.add_argument("input", type=Path, nargs="?", help="A text-based PDF, Markdown, or UTF-8 text file")
-    parser.add_argument("--voice", default=default_voice(), help=f"Installed macOS voice (default: {default_voice()})")
+    chosen_default_voice = default_voice()
+    parser.add_argument("--voice", default=chosen_default_voice, help=f"Installed macOS voice (default: {chosen_default_voice})")
     parser.add_argument("--rate", type=int, default=130, help="Speaking rate in words per minute (default: 130)")
     parser.add_argument("--output", type=Path, help="Output folder (default: <input>_listening_packet)")
     parser.add_argument("--skip-audio", action="store_true", help="Create and inspect section text without rendering audio")

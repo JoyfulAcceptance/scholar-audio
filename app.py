@@ -13,7 +13,6 @@ import tempfile
 import zipfile
 from collections import Counter
 from dataclasses import dataclass
-from functools import lru_cache
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence, Tuple
 
@@ -399,7 +398,6 @@ def prepare_preview_text(source: Path, rate: int, word_limit: int = 80) -> str:
     return prepare_spoken_section(preview_section, rate, front_matter)
 
 
-@lru_cache(maxsize=1)
 def available_voices() -> List[str]:
     result = subprocess.run(["say", "-v", "?"], check=True, capture_output=True, text=True)
     voices: List[str] = []

@@ -17,17 +17,19 @@ const statusMessage = document.querySelector("#status-message");
 const sectionName = document.querySelector("#section-name");
 const results = document.querySelector("#results");
 const fileList = document.querySelector("#file-list");
-const favoriteVoices = ["Evan (Enhanced)", "Samantha", "Daniel", "Karen", "Tessa (Enhanced)"];
+const favoriteVoices = ["Evan (Enhanced)", "Jamie (Premium)", "Samantha", "Daniel", "Karen", "Tessa (Enhanced)"];
 let installedFavorites = [];
 let previewId = null;
 
 async function loadVoices() {
   try {
-    const response = await fetch("/api/voices");
+    const selectedVoice = voiceSelect.value;
+    const response = await fetch("/api/voices", { cache: "no-store" });
     const data = await response.json();
     if (!data.voices?.length) return;
-    const preferred = data.voices.includes("Evan (Enhanced)") ? "Evan (Enhanced)" :
-      (data.voices.includes("Samantha") ? "Samantha" : data.voices[0]);
+    const preferred = data.voices.includes(selectedVoice) ? selectedVoice :
+      data.voices.includes("Evan (Enhanced)") ? "Evan (Enhanced)" :
+      data.voices.includes("Samantha") ? "Samantha" : data.voices[0];
     installedFavorites = favoriteVoices.filter((voice) => data.voices.includes(voice));
     const remainingVoices = data.voices.filter((voice) => !installedFavorites.includes(voice));
 
@@ -50,6 +52,8 @@ async function loadVoices() {
     // Samantha remains available as the plain fallback.
   }
 }
+
+window.addEventListener("focus", loadVoices);
 
 function showFile(file) {
   fileLabel.textContent = file ? file.name : "Drop article here";

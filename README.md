@@ -48,6 +48,18 @@ This project wraps that working manual pipeline into a repeatable tool.
 - `ffmpeg` for audio conversion and audiobook assembly
 - Python 3 for the local app/pipeline
 
+### Add more Mac voices
+
+Scholar Audio can use additional voices that you download through macOS:
+
+1. Open **System Settings**.
+2. Choose **Accessibility**, then **Live Speech**.
+3. Click the information button beside the voice setting.
+4. Preview and download any voices you would like to use.
+5. Return to Scholar Audio and reopen the Voice menu. The app refreshes the installed voice list when its window regains focus.
+
+Only voices that macOS exposes to its local `say` tool can render downloadable Scholar Audio files. Downloaded compatible voices remain on the Mac and require no document upload or cloud TTS account.
+
 Install the two command-line dependencies with Homebrew:
 
 ```bash

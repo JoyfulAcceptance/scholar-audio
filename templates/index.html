@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Turn scholarly papers into private, local listening packets.">
+    <title>Scholar Audio</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <h1>Scholar Audio</h1>
+      </header>
+
+      <form id="generator-form">
+        <label id="drop-zone" class="drop-zone" for="document">
+          <input id="document" name="document" type="file" accept=".pdf,.md,.txt,application/pdf,text/markdown,text/plain" required>
+          <span class="scroll-top" aria-hidden="true"></span>
+          <span class="scroll-paper">
+            <span class="quill" aria-hidden="true">🪶</span>
+            <strong id="file-label">Drop article here</strong>
+            <span>PDF · Markdown · Text</span>
+          </span>
+          <span class="scroll-bottom" aria-hidden="true"></span>
+        </label>
+
+        <div id="settings-panel" class="card settings-panel">
+          <div class="controls">
+            <label>Voice
+              <select id="voice" name="voice"><option>Evan (Enhanced)</option></select>
+            </label>
+            <label>Speaking pace
+              <div class="rate-row">
+                <input id="rate" name="rate" type="range" min="100" max="260" value="130" step="5">
+                <output id="rate-output" for="rate">130 wpm</output>
+              </div>
+            </label>
+          </div>
+          <button id="generate" type="submit" disabled>Create audio</button>
+          <button id="prepare-sample" class="sample-suggestion" type="button" disabled>Prepare a listening sample first</button>
+          <p id="sample-status" class="sample-status" aria-live="polite"></p>
+          <div id="sample-actions" class="sample-actions" hidden>
+            <button id="play-sample" class="secondary" type="button">Play sample on Mac</button>
+          </div>
+          <p class="privacy"><span aria-hidden="true">●</span> Runs locally. Your document stays on this Mac.</p>
+        </div>
+      </form>
+
+      <section id="progress-card" class="card progress-card" hidden aria-live="polite">
+        <div class="progress-heading">
+          <div>
+            <p class="eyebrow">PREPARING YOUR PAPER</p>
+            <h2 id="status-message">Starting…</h2>
+          </div>
+          <span id="progress-count"></span>
+        </div>
+        <div class="progress-track"><div id="progress-bar"></div></div>
+        <p id="section-name" class="section-name"></p>
+      </section>
+
+      <section id="results" class="card results" hidden aria-live="polite">
+        <p class="eyebrow">LISTENING PACKET READY</p>
+        <h2>Choose audio only or the complete listening packet.</h2>
+        <div id="file-list" class="file-list"></div>
+        <button id="start-over" class="secondary" type="button">Make another packet</button>
+      </section>
+
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

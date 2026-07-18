@@ -1,0 +1,19 @@
+Listening With Tired Eyes
+Genevieve Prentice
+July 2026
+
+ABSTRACT
+
+Dense papers often arrive when a reader has the least visual energy left. This short sample demonstrates how Scholar Audio turns structured text into named listening tracks while keeping the source document local.
+
+INTRODUCTION
+
+Listening is not identical to reading a page. A useful listening copy should announce changes in structure and give the reader enough space to notice a new idea.
+
+METHODS
+
+Scholar Audio preserves common section headings, repairs simple line-break artifacts, and sends each prepared section to a voice already installed on the reader's Mac.
+
+CONCLUSION
+
+The smallest useful result is a folder that a tired reader can understand: named text sections, matching audio tracks, and a short guide to the packet.

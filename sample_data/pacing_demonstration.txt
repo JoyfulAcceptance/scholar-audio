@@ -1,0 +1,27 @@
+Listening for Difficult Ideas
+Genevieve Prentice
+July 2026
+
+ABSTRACT
+
+Scholar Audio prepares scholarly writing for the ear instead of merely sending extracted text to a voice.
+
+INTRODUCTION
+
+Ordinary prose stays at the listener's selected pace. This establishes the rhythm of the reading before a more difficult idea arrives.
+
+NEW TERMS
+
+Interactional agency refers to a person's practical ability to notice, question, redirect, or refuse the course of an exchange.
+
+DENSE CONTENT
+
+In an open probabilistic system, the meaning of an answer depends not only on model weights, but also on accumulated context, user framing, prior outputs, changing goals, social conditions, and the human judgment required to decide whether the answer remains appropriate.
+
+VERY DENSE CONTENT
+
+Operational safety can be represented as a changing relationship among domain, user interaction, contextual state, and time, where each new input alters the conditions under which the next output is generated, interpreted, accepted, challenged, or refused by the people participating in the system, while institutional constraints and unequal power continue shaping which choices remain practically available.
+
+CONCLUSION
+
+After difficult material, the reading returns to its ordinary pace. The listener gets both time within the idea and a pause after it.

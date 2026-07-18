@@ -25,7 +25,7 @@ The hackathon MVP is a local Mac web app:
 
 ## Current Status
 
-Pre-alpha. This repo is being prepared for OpenAI Build Week / Devpost.
+The first command-line pipeline is working. It accepts text-based PDFs and text files, prepares section text for listening, and renders named `.m4a` chapter tracks locally.
 
 The underlying workflow has already been tested manually on AI/HCI research papers using:
 
@@ -48,6 +48,49 @@ This project wraps that working manual pipeline into a repeatable tool.
 - `ffmpeg` for audio conversion and audiobook assembly
 - Python 3 for the local app/pipeline
 
+Install the two command-line dependencies with Homebrew:
+
+```bash
+brew install poppler ffmpeg
+```
+
+## Run the CLI
+
+```bash
+python3 app.py paper.pdf --voice "Evan (Enhanced)" --rate 130
+```
+
+Scholar Audio uses a shortened citation name such as `EhsanEtAl2026_FutureOfWorkers`. Its primary download is a matching `.zip` listening packet containing the renamed source, a complete chaptered `.m4b` audiobook, and `README_listening_packet.md`. Working section text and audio tracks remain available locally without cluttering the downloadable packet.
+
+Useful options:
+
+```bash
+# See the voices installed on this Mac
+python3 app.py --list-voices
+
+# Inspect extraction, cleanup, and section splitting without waiting for audio
+python3 app.py paper.pdf --skip-audio
+
+# Choose a specific destination
+python3 app.py paper.pdf --output /path/to/listening_packet
+```
+
+The MVP supports text-based PDFs, Markdown, and plain text. If a PDF is a scan, Scholar Audio explains that OCR is not yet supported. Keep the source paper open while listening for charts, tables, equations, footnotes, and images.
+
+## Listening Pacing
+
+The selected speaking rate is the baseline. Scholar Audio prepares difficult material for the ear by slowing new terms to 90% of that rate, dense sentences to 85%, and very dense sentences to 77%, then explicitly returning to the selected rate. It adds documented macOS `say` silence cues after difficult material and around structural transitions. Pauses scale gently from the 130 WPM baseline using `sqrt(130 / selected_rate)`, constrained to 75–135%.
+
+This pacing system is covered by regression tests in `tests/test_pacing.py`.
+
+## Run the Local Interface
+
+```bash
+python3 web_app.py
+```
+
+Scholar Audio opens at `http://127.0.0.1:8765`. Drop in a PDF, Markdown, or text file, choose a voice and pace, and follow the section-by-section progress. Finished packets stay in the local `output/` folder and are never sent to a cloud service.
+
 ## Devpost Framing
 
 Potential tracks:
@@ -66,4 +109,3 @@ Core promise:
 Concept, workflow design, listening experience, and product framing: Genevieve Prentice.
 
 Implementation support: Codex, with technical review/guidance from Bruce Stephenson.
-

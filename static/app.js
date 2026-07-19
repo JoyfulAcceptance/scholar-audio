@@ -56,7 +56,7 @@ async function loadVoices() {
 window.addEventListener("focus", loadVoices);
 
 function showFile(file) {
-  fileLabel.textContent = file ? file.name : "Drop article here";
+  fileLabel.textContent = file ? file.name : "Call up your article";
   generate.disabled = !file;
   prepareSample.disabled = !file;
   invalidatePreparedSample();

@@ -39,7 +39,7 @@ Keep the working loop small: prepare one scholarly document locally, create one 
 - [ ] Capture clear interface and output-packet screenshots.
 - [ ] Tighten setup instructions by testing them from a clean terminal session.
 - [ ] Add sample input and representative output information to the README without committing oversized audio unnecessarily.
-- [ ] Write the under-three-minute demo script.
+- [x] Write the thirty-second self-narrating demo and capture plan.
 - [ ] Record the public YouTube demo.
 - [ ] Explain plainly how Codex and GPT-5.6 helped turn the manual workflow into the local tool.
 - [ ] Add the required `/feedback` session ID to the submission materials.
@@ -57,8 +57,28 @@ These are valuable only after the complete local listening loop and submission m
 - [ ] Add a user-editable pronunciation dictionary.
 - [ ] Explore emphasis for newly introduced terms when the selected voice supports it.
 - [ ] Improve detection of conceptual lists outside Results sections.
+- [ ] Explore a brief pause between a complex sentence subject and its main predicate.
 - [ ] Add clearer treatment for tables, equations, figures, citations, and footnotes.
 - [ ] Let users inspect and lightly edit the prepared listening text before rendering.
+
+#### Advanced feature concept: heavy-subject pause
+
+This is a later listening-preparation experiment, not current MVP scope. A sentence with a long or embedded subject can benefit from a small cognitive boundary before its main verb:
+
+```text
+A pond that remains wet after rainfall has stopped — carries a kind of ecological memory.
+```
+
+Preferred first experiment:
+
+- Add an em dash only to the prepared reading copy; never alter the source document.
+- Compare the dash with an explicit short cue such as `[[slnc 100]]` and keep whichever sounds more natural across supported voices.
+- Scale an explicit pause from the 130 WPM baseline if the silence cue proves preferable.
+- Apply the rule only to a long or structurally complex initial subject, not every long opening phrase.
+- Skip insertion when punctuation already creates a useful boundary.
+- Collect positive and negative examples before automating the rule.
+- If simple heuristics prove brittle, consider a local dependency parser such as spaCy to locate the complete subject and the sentence's main verb.
+- Treat any new parser as an optional later dependency; Scholar Audio's current pipeline deliberately remains small.
 
 #### Advanced feature concept: pronunciation dictionary
 

@@ -24,15 +24,15 @@ body {
 .shell {
   width: min(720px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 64px 0 32px;
+  padding: 36px 0 24px;
 }
 
 header { text-align: center; }
 
 h1 {
-  margin: 0 0 54px;
+  margin: 0 0 28px;
   font-family: "Snell Roundhand", "Apple Chancery", "URW Chancery L", cursive;
-  font-size: clamp(4rem, 13vw, 7rem);
+  font-size: clamp(3.25rem, 10vw, 5.25rem);
   font-weight: 400;
   line-height: 0.9;
   letter-spacing: -0.035em;
@@ -42,7 +42,7 @@ h1 {
   position: relative;
   display: flex;
   width: min(430px, 92%);
-  min-height: 270px;
+  min-height: 235px;
   margin: 0 auto;
   align-items: stretch;
   justify-content: center;
@@ -66,8 +66,8 @@ h1 {
   position: relative;
   z-index: 1;
   display: flex;
-  min-height: 220px;
-  padding: 48px 54px 42px;
+  min-height: 185px;
+  padding: 35px 54px 32px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -100,8 +100,8 @@ h1 {
 .scroll-paper > span:last-child { color: var(--muted); font-size: 0.76rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 
 .card {
-  margin-top: 34px;
-  padding: 27px;
+  margin-top: 22px;
+  padding: 22px 27px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 250, 240, 0.94);
@@ -116,7 +116,7 @@ h1 {
   box-shadow: 0 14px 30px rgba(70, 47, 19, 0.11);
   animation: rise 220ms ease both;
 }
-.controls { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; margin-bottom: 24px; }
+.controls { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; margin-bottom: 18px; }
 .controls label { display: flex; flex-direction: column; gap: 9px; font-size: 0.78rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
 select { width: 100%; padding: 12px; border: 1px solid #bd9559; border-radius: 9px; background: #fff9e9; color: var(--ink); font: inherit; text-transform: none; }
 .rate-row { display: flex; min-height: 42px; align-items: center; gap: 12px; }
@@ -170,9 +170,9 @@ footer { margin-top: 30px; color: #948778; font-size: 0.76rem; text-align: cente
 @keyframes rise { from { opacity: 0; transform: translateY(9px); } }
 
 @media (max-width: 580px) {
-  .shell { padding-top: 45px; }
-  h1 { margin-bottom: 38px; }
-  .scroll-paper { min-height: 200px; padding: 42px 28px 36px; }
+  .shell { padding-top: 28px; }
+  h1 { margin-bottom: 24px; }
+  .scroll-paper { min-height: 180px; padding: 34px 28px 30px; }
   .card { padding: 19px; }
   .controls { grid-template-columns: 1fr; gap: 18px; }
 }

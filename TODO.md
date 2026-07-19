@@ -131,6 +131,7 @@ Design rules:
 
 ### Future speech engines
 
+- [ ] Follow the staged cross-platform design in [`FUTURE_CROSS_PLATFORM.md`](FUTURE_CROSS_PLATFORM.md).
 - [ ] Investigate a local neural TTS adapter while preserving offline document privacy.
 - [ ] Keep the macOS native voice path as the free, private default.
 - [ ] Consider optional cloud TTS adapters only with explicit user consent, clear document-upload warnings, and suitable audio licensing.

@@ -38,6 +38,29 @@ JOBS: Dict[str, Dict[str, object]] = {}
 JOBS_LOCK = threading.Lock()
 PREVIEWS: Dict[str, Dict[str, object]] = {}
 PREVIEWS_LOCK = threading.Lock()
+PLAYBACK_PROCESS: Optional[subprocess.Popen] = None
+PLAYBACK_LOCK = threading.Lock()
+
+
+def start_playback(command: list[str]) -> None:
+    """Play one local preview at a time, replacing anything already speaking."""
+    global PLAYBACK_PROCESS
+
+    with PLAYBACK_LOCK:
+        previous = PLAYBACK_PROCESS
+        if previous and previous.poll() is None:
+            previous.terminate()
+        process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        PLAYBACK_PROCESS = process
+
+    def reap() -> None:
+        global PLAYBACK_PROCESS
+        process.wait()
+        with PLAYBACK_LOCK:
+            if PLAYBACK_PROCESS is process:
+                PLAYBACK_PROCESS = None
+
+    threading.Thread(target=reap, daemon=True).start()
 
 
 def safe_filename(name: str) -> str:
@@ -186,7 +209,7 @@ class ScholarAudioHandler(BaseHTTPRequestHandler):
                 self.send_json({"error": "The listening sample is not ready."}, HTTPStatus.NOT_FOUND)
                 return
             try:
-                subprocess.Popen(["afplay", str(audio_value)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                start_playback(["afplay", str(audio_value)])
                 self.send_json({"ok": True})
             except OSError as exc:
                 self.send_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -243,12 +266,11 @@ class ScholarAudioHandler(BaseHTTPRequestHandler):
                     raise ScholarAudioError("That Mac voice is not installed.")
                 if not 80 <= rate <= 400:
                     raise ScholarAudioError("Speaking rate must be between 80 and 400.")
-                subprocess.run(
-                    ["say", "-v", voice, "-r", str(rate), "Scholar Audio turns dense papers into listening time."],
-                    check=True,
+                start_playback(
+                    ["say", "-v", voice, "-r", str(rate), "Scholar Audio turns dense papers into listening time."]
                 )
                 self.send_json({"ok": True})
-            except (ScholarAudioError, ValueError, OSError, json.JSONDecodeError, subprocess.CalledProcessError) as exc:
+            except (ScholarAudioError, ValueError, OSError, json.JSONDecodeError) as exc:
                 self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
         if request_path != "/api/jobs":

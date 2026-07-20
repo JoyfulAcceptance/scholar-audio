@@ -42,7 +42,7 @@ Keep the working loop small: prepare one scholarly document locally, create one 
 - [x] Write the thirty-second self-narrating demo and capture plan.
 - [ ] Record the public YouTube demo.
 - [ ] Explain plainly how Codex and GPT-5.6 helped turn the manual workflow into the local tool.
-- [ ] Add the required `/feedback` session ID to the submission materials.
+- [x] Capture the required `/feedback` session ID for the Devpost form: `019f73b7-b84a-73f3-92c9-5577269ebc7c`.
 - [ ] Perform a final repository audit for setup, sample data, licensing, privacy language, and reproducibility.
 - [x] Push the first working version and `v0.1.0` tag to GitHub.
 - [ ] Verify the public repository from a clean browser session.

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import math
 import re
 import shutil
@@ -11,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+import xml.etree.ElementTree as ET
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,7 +41,10 @@ SECTION_NAMES = {
     "references",
 }
 HEADING_RE = re.compile(r"^(?:\d+(?:\.\d+)*[.)]?\s+)?(.{2,80})$")
-CITATION_RE = re.compile(r"\s+([,.;:!?])")
+PUNCTUATION_SPACE_RE = re.compile(r"\s+([,.;:!?])")
+NUMERIC_CITATION_RE = re.compile(
+    r"\s*\[\s*\d+(?:\s*(?:,|[-–])\s*\d+)*\s*\]"
+)
 AFFILIATION_WORDS = {
     "university", "college", "institute", "laboratory", "lab", "department",
     "school", "center", "centre", "corporation", "inc", "llc", "foundation",
@@ -47,6 +52,8 @@ AFFILIATION_WORDS = {
 }
 TITLE_SKIP_WORDS = {"a", "an", "and", "the", "toward", "towards"}
 PREFERRED_VOICE = "Evan (Enhanced)"
+HEADING_MARKER = "[[SCHOLAR_HEADING]] "
+MAX_RENDER_WORDS = 1000
 TRANSITION_OPENERS = (
     "however", "therefore", "in contrast", "as a result", "for this reason",
     "more importantly", "by comparison", "this means", "the central",
@@ -84,18 +91,129 @@ def extract_text(source: Path) -> str:
         return source.read_text(encoding="utf-8", errors="replace")
     if suffix != ".pdf":
         raise ScholarAudioError("Input must be a text-based .pdf, .md, or .txt file.")
-    if shutil.which("pdftotext") is None:
-        raise ScholarAudioError("PDF extraction requires pdftotext. Install it with: brew install poppler")
+    if shutil.which("pdftohtml") is None:
+        raise ScholarAudioError("PDF extraction requires Poppler. Install it with: brew install poppler")
 
     with tempfile.TemporaryDirectory(prefix="scholar-audio-") as temp_dir:
-        extracted = Path(temp_dir) / "extracted.txt"
-        run(["pdftotext", "-layout", str(source), str(extracted)], "extract PDF text")
-        text = extracted.read_text(encoding="utf-8", errors="replace")
+        extracted = Path(temp_dir) / "extracted.xml"
+        run(
+            ["pdftohtml", "-xml", "-hidden", "-nodrm", "-i", str(source), str(extracted)],
+            "extract structured PDF text",
+        )
+        text = structured_pdf_text(extracted)
     if len(re.sub(r"\s", "", text)) < 100:
         raise ScholarAudioError(
             "This PDF contains too little extractable text. It may be scanned; OCR is not in the MVP."
         )
     return text
+
+
+def structured_pdf_text(xml_path: Path) -> str:
+    """Recover PDF reading order and mark standalone bold headings."""
+    root = ET.parse(xml_path).getroot()
+    pages: List[str] = []
+    excluded_headings = {"ccs concepts", "keywords", "acm reference format"}
+    shared_fonts: Dict[str, Tuple[float, str]] = {}
+    outline_titles = [
+        re.sub(r"\s+", " ", "".join(item.itertext())).strip()
+        for item in root.findall(".//outline//item")
+        if "".join(item.itertext()).strip()
+    ]
+
+    def normalized(value: str) -> str:
+        return re.sub(r"\s+", " ", value).strip().casefold()
+
+    for page in root.findall("page"):
+        page_width = float(page.attrib.get("width", "0") or 0)
+        shared_fonts.update({
+            item.attrib["id"]: (float(item.attrib.get("size", "0") or 0), item.attrib.get("family", ""))
+            for item in page.findall("fontspec")
+        })
+        fonts = shared_fonts
+        nodes = []
+        size_weights: Counter[float] = Counter()
+        for item in page.findall("text"):
+            text = html.unescape("".join(item.itertext())).strip()
+            if not text:
+                continue
+            font_id = item.attrib.get("font", "")
+            size, family = fonts.get(font_id, (0.0, ""))
+            left = float(item.attrib.get("left", "0") or 0)
+            width = float(item.attrib.get("width", "0") or 0)
+            top = float(item.attrib.get("top", "0") or 0)
+            column = -1 if page_width and left < page_width * 0.45 and left + width > page_width * 0.55 else int(left >= page_width / 2)
+            bold = bool(re.search(r"bold|demi|black", family, re.IGNORECASE)) or family.endswith(("TB", "TBI", "TBO"))
+            nodes.append((top, column, text, size, bold))
+            if size:
+                size_weights[size] += len(text)
+
+        body_size = size_weights.most_common(1)[0][0] if size_weights else 0.0
+        lines = []
+        current = []
+        current_top = 0.0
+        current_column = -2
+
+        def flush_line() -> None:
+            if not current:
+                return
+            line_text = " ".join(part[0] for part in current).strip()
+            total_chars = sum(len(part[0]) for part in current)
+            bold_chars = sum(len(part[0]) for part in current if part[2])
+            largest_size = max(part[1] for part in current)
+            bold_ratio = bold_chars / max(1, total_chars)
+            candidate = line_text.rstrip(":")
+            numbered = bool(re.match(r"^\d+(?:\.\d+)*\s+\S", candidate))
+            heading_shape = (
+                1 <= len(candidate.split()) <= 16
+                and len(candidate) <= 140
+                and not re.search(r"[?!]$", candidate)
+                and candidate.lower() not in excluded_headings
+            )
+            styled_heading = (
+                heading_shape
+                and bold_ratio >= 0.72
+                and (numbered or body_size - 2 <= largest_size <= body_size + 4)
+                and (not outline_titles or candidate.lower() in SECTION_NAMES)
+            )
+            lines.append(f"{HEADING_MARKER}{line_text}" if styled_heading else line_text)
+            current.clear()
+
+        for top, column, text, size, bold in nodes:
+            if current and (abs(top - current_top) > 4 or column != current_column):
+                flush_line()
+            if not current:
+                current_top = top
+                current_column = column
+            current.append((text, size, bold))
+        flush_line()
+
+        restored_lines: List[str] = []
+        index = 0
+        while index < len(lines):
+            raw_line = lines[index].removeprefix(HEADING_MARKER)
+            line_key = normalized(raw_line)
+            outline_match = next(
+                (title for title in outline_titles if line_key and normalized(title).startswith(line_key)),
+                None,
+            )
+            if outline_match and (re.match(r"^(?:\d|[A-Z]\s)", raw_line) or raw_line.lower() in SECTION_NAMES):
+                combined = raw_line
+                next_index = index + 1
+                while next_index < len(lines):
+                    continuation = lines[next_index].removeprefix(HEADING_MARKER)
+                    proposed = f"{combined} {continuation}"
+                    if not normalized(outline_match).startswith(normalized(proposed)):
+                        break
+                    combined = proposed
+                    next_index += 1
+                restored_lines.append(f"{HEADING_MARKER}{outline_match}")
+                index = next_index
+                continue
+            restored_lines.append(lines[index])
+            index += 1
+        pages.append("\n".join(restored_lines))
+
+    return "\f".join(pages)
 
 
 def remove_repeated_page_lines(text: str) -> str:
@@ -117,6 +235,8 @@ def remove_repeated_page_lines(text: str) -> str:
 
 def is_heading(line: str) -> bool:
     candidate = line.strip().rstrip(":")
+    if candidate.startswith(HEADING_MARKER):
+        return True
     match = HEADING_RE.fullmatch(candidate)
     if not match:
         return False
@@ -138,17 +258,24 @@ def is_heading(line: str) -> bool:
 def clean_text(raw: str) -> str:
     text = remove_repeated_page_lines(raw).replace("\u00ad", "")
     text = re.sub(r"(?<=\w)-\n(?=[a-z])", "", text)
-    lines = [
-        re.sub(r"[ \t]+", " ", re.sub(r"^#{1,6}\s+", "", line)).strip()
-        for line in text.splitlines()
-    ]
+    lines = []
+    seen_nonempty = False
+    for line in text.splitlines():
+        markdown_heading = re.match(r"^(#{1,6})\s+(.+)", line.strip())
+        cleaned_line = markdown_heading.group(2) if markdown_heading else line
+        cleaned_line = re.sub(r"[ \t]+", " ", cleaned_line).strip()
+        if markdown_heading and (len(markdown_heading.group(1)) > 1 or seen_nonempty):
+            cleaned_line = f"{HEADING_MARKER}{cleaned_line}"
+        lines.append(cleaned_line)
+        seen_nonempty = seen_nonempty or bool(cleaned_line)
     blocks: List[str] = []
     paragraph: List[str] = []
 
     def flush() -> None:
         if paragraph:
             joined = " ".join(paragraph)
-            blocks.append(CITATION_RE.sub(r"\1", joined))
+            joined = NUMERIC_CITATION_RE.sub("", joined)
+            blocks.append(PUNCTUATION_SPACE_RE.sub(r"\1", joined))
             paragraph.clear()
 
     for line in lines:
@@ -166,7 +293,8 @@ def clean_text(raw: str) -> str:
 
 
 def normalize_title(heading: str) -> str:
-    title = re.sub(r"^\d+(?:\.\d+)*[.)]?\s+", "", heading.strip()).rstrip(":")
+    heading = heading.strip().removeprefix(HEADING_MARKER)
+    title = re.sub(r"^\d+(?:\.\d+)*[.)]?\s+", "", heading).rstrip(":")
     return title.title() if title.isupper() else title
 
 
@@ -223,6 +351,15 @@ def looks_like_author_line(line: str) -> bool:
     lowercase = {"and", "de", "del", "der", "di", "la", "van", "von"}
     name_like = sum(word[0].isupper() or word.lower() in lowercase for word in words)
     return name_like / len(words) >= 0.8
+
+
+def strip_contact_details(line: str) -> str:
+    """Remove contact fields that should never be narrated as front matter."""
+    cleaned = re.sub(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", "", line)
+    cleaned = re.sub(r"\b(?:https?://|www\.)\S+", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bORCID\s*:?\s*[\dXx-]+", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(?:corresponding\s+author|contact)\s*:?", "", cleaned, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", cleaned).strip(" ,;:-")
 
 
 def author_label(author_line: str) -> str:
@@ -298,7 +435,8 @@ def listening_front_matter(raw: str, rate: int) -> str:
         if line.strip()
     ]
     abstract_index = next((index for index, line in enumerate(lines) if line.rstrip(":").lower() == "abstract"), 0)
-    front = lines[:abstract_index]
+    front = [strip_contact_details(line) for line in lines[:abstract_index]]
+    front = [line for line in front if line]
     if not front:
         return ""
     year_index = next((index for index, line in enumerate(front) if re.search(r"\b(?:19|20)\d{2}\b", line)), None)
@@ -437,6 +575,92 @@ def render_audio(text_file: Path, audio_file: Path, voice: str, rate: int) -> No
             raise ScholarAudioError("ffmpeg created an empty audio track.")
     finally:
         aiff_file.unlink(missing_ok=True)
+
+
+def split_render_chunks(text: str, max_words: int = MAX_RENDER_WORDS) -> List[str]:
+    """Split prepared speech at paragraph or sentence boundaries for reliable rendering."""
+    if max_words < 1:
+        raise ValueError("max_words must be positive")
+    units: List[str] = []
+    for paragraph in (part.strip() for part in re.split(r"\n\s*\n", text)):
+        if not paragraph:
+            continue
+        if len(paragraph.split()) <= max_words:
+            units.append(paragraph)
+            continue
+        sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", paragraph) if part.strip()]
+        for sentence in sentences:
+            words = sentence.split()
+            if len(words) <= max_words:
+                units.append(sentence)
+            else:
+                units.extend(" ".join(words[index:index + max_words]) for index in range(0, len(words), max_words))
+
+    chunks: List[str] = []
+    current: List[str] = []
+    current_words = 0
+    for unit in units:
+        unit_words = len(unit.split())
+        if current and current_words + unit_words > max_words:
+            chunks.append("\n\n".join(current))
+            current = []
+            current_words = 0
+        current.append(unit)
+        current_words += unit_words
+    if current:
+        chunks.append("\n\n".join(current))
+    return chunks
+
+
+def render_section_audio(
+    text: str,
+    text_file: Path,
+    audio_file: Path,
+    voice: str,
+    rate: int,
+    progress: Optional[Callable[[int, int], None]] = None,
+) -> None:
+    """Render bounded internal chunks and expose one final chapter track."""
+    chunks = split_render_chunks(text)
+    if len(chunks) == 1:
+        if progress:
+            progress(1, 1)
+        render_audio(text_file, audio_file, voice, rate)
+        return
+
+    part_texts: List[Path] = []
+    part_audio: List[Path] = []
+    concat_file = audio_file.with_name(f".{audio_file.stem}_parts.txt")
+    try:
+        for index, chunk in enumerate(chunks, 1):
+            part_text = audio_file.with_name(f".{audio_file.stem}_part_{index:03d}.txt")
+            part_track = audio_file.with_name(f".{audio_file.stem}_part_{index:03d}.m4a")
+            if index > 1:
+                chunk = f"{silence(300, rate)}\n\n{chunk}"
+            part_text.write_text(chunk, encoding="utf-8")
+            if progress:
+                progress(index, len(chunks))
+            render_audio(part_text, part_track, voice, rate)
+            part_texts.append(part_text)
+            part_audio.append(part_track)
+
+        concat_file.write_text(
+            "\n".join(f"file '{track.name}'" for track in part_audio) + "\n",
+            encoding="utf-8",
+        )
+        run(
+            [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0",
+                "-i", str(concat_file), "-c", "copy", str(audio_file),
+            ],
+            "join internal chapter chunks",
+        )
+        if not audio_file.exists() or audio_file.stat().st_size < 1024:
+            raise ScholarAudioError("ffmpeg created an empty chapter track.")
+    finally:
+        concat_file.unlink(missing_ok=True)
+        for path in [*part_texts, *part_audio]:
+            path.unlink(missing_ok=True)
 
 
 def audio_duration(audio_file: Path) -> float:
@@ -614,7 +838,21 @@ def build_packet(
             print(f"Rendering {index}/{len(sections)}: {section.title}")
             if progress:
                 progress(index, len(sections), section.title)
-            render_audio(text_file, output / track_name, voice, rate)
+            render_section_audio(
+                spoken,
+                text_file,
+                output / track_name,
+                voice,
+                rate,
+                progress=(
+                    (lambda part, total, section_title=section.title: progress(
+                        index,
+                        len(sections),
+                        f"{section_title} (part {part} of {total})" if total > 1 else section_title,
+                    ))
+                    if progress else None
+                ),
+            )
             readme_tracks.append((section.title, track_name))
             audio_tracks.append((section.title, output / track_name))
         else:

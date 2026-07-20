@@ -4,6 +4,10 @@ Scholar Audio turns scholarly PDFs and long articles into local, private listeni
 
 The goal is simple: drop in a PDF, choose a voice and pace, and generate a folder containing cleaned listening text, chapter audio tracks, and an audiobook file.
 
+## Built for OpenAI Build Week
+
+Scholar Audio was created during the OpenAI Build Week submission period, July 13–21, 2026. Before Build Week, I had tested a manual, multi-step process for turning scholarly papers into local audiobooks. During Build Week, Codex and GPT-5.6 helped me turn that experiment into the working software in this repository: the Python pipeline, adaptive pacing system, local browser interface, audiobook packaging, and automated tests. The repository history documents that development period.
+
 ## Why This Exists
 
 Scholarly reading is often dense, time-bound, and physically demanding. Many people need to read while tired, traveling, visually strained, dysregulated, multitasking, or working around attention limits.
@@ -124,8 +128,12 @@ Core promise:
 
 > Make scholarly reading portable without sending your documents to a cloud TTS service.
 
-## Attribution
+## How This Was Built with Codex and GPT-5.6
 
-Concept, workflow design, listening experience, and product framing: Genevieve Prentice.
+I began with the reader's problem, a tested manual workflow, and a detailed collaboration prompt defining the privacy goal, MVP boundary, and three-minute demonstration standard. My Codex setup included durable memory, interaction guidance, and separate Generator and Auditor roles.
 
-Implementation support: Codex, with technical review/guidance from Bruce Stephenson.
+I served as product owner, workflow designer, listener, and final decision-maker. GPT-5.6 helped reason through the listening experience—most visibly the adaptive pacing rules for new terms, dense sentences, and repeated complex findings. Codex translated those decisions into working Python, tests, documentation, and a local browser interface.
+
+The pacing system emerged through an iterative listening process. Codex generated prepared text and audio; I listened, identified where sections collided or difficult passages became exhausting, and described those problems in ordinary language. Codex converted my observations into repeatable rules, and I judged the revised recordings. Bruce Stephenson provided human advice on scope, code review, and submission readiness.
+
+Scholar Audio does not call a cloud AI service at runtime. Codex and GPT-5.6 were development collaborators; document extraction, listening preparation, and speech rendering remain local to the reader's Mac.

@@ -427,6 +427,91 @@ def silence(base_ms: int, rate: int) -> str:
     return f"[[slnc {scaled_pause(base_ms, rate)}]]"
 
 
+def integer_words(value: int) -> str:
+    ones = (
+        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+        "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+        "seventeen", "eighteen", "nineteen",
+    )
+    tens = ("", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety")
+    if value < 20:
+        return ones[value]
+    if value < 100:
+        return tens[value // 10] + (f"-{ones[value % 10]}" if value % 10 else "")
+    if value < 1000:
+        return f"{ones[value // 100]} hundred" + (f" {integer_words(value % 100)}" if value % 100 else "")
+    if value < 1_000_000:
+        return f"{integer_words(value // 1000)} thousand" + (
+            f" {integer_words(value % 1000)}" if value % 1000 else ""
+        )
+    return str(value)
+
+
+def verbalize_decimals(text: str, pause: str = "") -> str:
+    """Write decimal notation as speech in the disposable listening copy."""
+    def identifier_decimal(match: re.Match[str]) -> str:
+        whole, fraction = int(match.group(2)), match.group(3)
+        spoken_fraction = " ".join(integer_words(int(digit)) for digit in fraction)
+        return f"{match.group(1)} {integer_words(whole)} point {spoken_fraction}"
+
+    text = re.sub(r"\b([A-Za-z][A-Za-z0-9]*)-(\d+)\.(\d+)(?!\d|\.\d)", identifier_decimal, text)
+
+    def ordinary_decimal(match: re.Match[str]) -> str:
+        whole = int(match.group(1))
+        fraction = match.group(2).rstrip("0") or "0"
+        spoken_fraction = " ".join(integer_words(int(digit)) for digit in fraction)
+        trailing_space = " " if match.end() < len(match.string) and match.string[match.end()].isalpha() else ""
+        spoken_pause = f" {pause}" if pause else ""
+        return f"{integer_words(whole)} point {spoken_fraction}{spoken_pause}{trailing_space}"
+
+    return re.sub(r"(?<![\w.])(\d+)\.(\d+)(?!\d|\.\d)", ordinary_decimal, text)
+
+
+def slow_numbers_and_versions(text: str, rate: int, restore_rate: Optional[int] = None) -> str:
+    """Slow decimal quantities and complete acronym-version labels for listening."""
+    number_rate = max(80, round(rate * 0.75))
+    restore = restore_rate if restore_rate is not None else rate
+
+    def version_label(match: re.Match[str]) -> str:
+        before, acronym, whole, fraction, after = match.groups()
+        spoken_acronym = " ".join(acronym)
+        spoken_fraction = " ".join(integer_words(int(digit)) for digit in fraction)
+        spoken_version = f"{spoken_acronym} {integer_words(int(whole))} point {spoken_fraction}"
+        return f"[[rate {number_rate}]]{before}{spoken_version}{after}[[rate {restore}]]"
+
+    text = re.sub(
+        r"(\s*)\b([A-Z]{2,8})-(\d+)\.(\d+)(?!\d|\.\d)(\s*)",
+        version_label,
+        text,
+    )
+
+    def quantity(match: re.Match[str]) -> str:
+        before, whole, fraction, after = match.groups()
+        fraction = fraction.rstrip("0") or "0"
+        spoken_fraction = " ".join(integer_words(int(digit)) for digit in fraction)
+        spoken_number = f"{integer_words(int(whole))} point {spoken_fraction}"
+        return f"[[rate {number_rate}]]{before}{spoken_number}{after}[[rate {restore}]]"
+
+    return re.sub(
+        r"(\s*)(?<![\w.])(\d+)\.(\d+)(?!\d|\.\d)(\s*)",
+        quantity,
+        text,
+    )
+
+
+def slow_acronyms(text: str, rate: int, restore_rate: Optional[int] = None) -> str:
+    """Spell uppercase acronyms and slow them without changing source text."""
+    acronym_rate = max(80, round(rate * 0.75))
+    restore = restore_rate if restore_rate is not None else rate
+
+    def replace(match: re.Match[str]) -> str:
+        before, acronym, after = match.group(1), match.group(2), match.group(3)
+        spoken = " ".join(acronym)
+        return f"[[rate {acronym_rate}]]{before}{spoken}{after}[[rate {restore}]]"
+
+    return re.sub(r"(\s*)\b([A-Z]{2,8})\b(\s*)", replace, text)
+
+
 def listening_front_matter(raw: str, rate: int) -> str:
     opening = raw.split("\f", 1)[0]
     lines = [
@@ -494,10 +579,12 @@ def pace_paragraphs(text: str, rate: int, section_title: str = "") -> str:
             )
             relative_rate = 0.77 if very_dense else (0.85 if dense else (0.90 if introduced else 1.0))
             sentence_rate = max(80, round(rate * relative_rate))
+            spoken_sentence = slow_numbers_and_versions(sentence, rate, sentence_rate)
+            spoken_sentence = slow_acronyms(spoken_sentence, rate, sentence_rate)
             if sentence_rate != rate:
-                prepared_sentences.extend([f"[[rate {sentence_rate}]]", sentence, f"[[rate {rate}]]"])
+                prepared_sentences.extend([f"[[rate {sentence_rate}]]", spoken_sentence, f"[[rate {rate}]]"])
             else:
-                prepared_sentences.append(sentence)
+                prepared_sentences.append(spoken_sentence)
             if dense or introduced:
                 prepared_sentences.append(silence(550 if very_dense else (500 if dense else 450), rate))
             elif result_cluster:
@@ -510,7 +597,11 @@ def prepare_spoken_section(section: Section, rate: int, front_matter: str = "") 
     parts: List[str] = [silence(700, rate)]
     if front_matter and section.title.lower() == "abstract":
         parts.extend([front_matter, silence(700, rate)])
-    parts.extend([f"{section.title}.", silence(700, rate), pace_paragraphs(section.text, rate, section.title)])
+    parts.extend([
+        f"{slow_acronyms(slow_numbers_and_versions(section.title, rate), rate)}.",
+        silence(700, rate),
+        pace_paragraphs(section.text, rate, section.title),
+    ])
     return "\n\n".join(parts).strip() + "\n"
 
 

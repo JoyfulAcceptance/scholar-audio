@@ -5,6 +5,7 @@ dist/
 build/
 output/
 uploads/
+tmp/
 *.aiff
 *.m4a
 *.m4b

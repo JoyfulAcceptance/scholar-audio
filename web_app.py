@@ -42,6 +42,17 @@ PLAYBACK_PROCESS: Optional[subprocess.Popen] = None
 PLAYBACK_LOCK = threading.Lock()
 
 
+def stop_playback() -> None:
+    """Stop any voice or prepared sample currently playing on the Mac."""
+    global PLAYBACK_PROCESS
+
+    with PLAYBACK_LOCK:
+        process = PLAYBACK_PROCESS
+        PLAYBACK_PROCESS = None
+        if process and process.poll() is None:
+            process.terminate()
+
+
 def start_playback(command: list[str]) -> None:
     """Play one local preview at a time, replacing anything already speaking."""
     global PLAYBACK_PROCESS
@@ -276,6 +287,7 @@ class ScholarAudioHandler(BaseHTTPRequestHandler):
         if request_path != "/api/jobs":
             self.send_error(HTTPStatus.NOT_FOUND)
             return
+        stop_playback()
         try:
             length = int(self.headers.get("Content-Length", "0"))
             if length <= 0 or length > MAX_UPLOAD_BYTES:

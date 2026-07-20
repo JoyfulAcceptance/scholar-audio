@@ -42,9 +42,11 @@ The weights are illustrative. They do not establish a universal ecological formu
 
 ## Results
 
-Dam segments stored more surface water in all three fictional watersheds. Alder Reach showed the largest increase in pond area. Quiet Fen showed the longest downstream flow delay. Moonlit Fork showed the greatest increase in distinct habitat patches.
+Dam segments stored more surface water in all three fictional watersheds.
 
 Across all dam segments, mean BMRI increased from 0.18 before construction to 0.67 after the simulated two-year period. Comparison segments changed from 0.20 to 0.24.
+
+Alder Reach showed the largest increase in pond area. Quiet Fen showed the longest downstream flow delay. Moonlit Fork showed the greatest increase in distinct habitat patches.
 
 The most complex result concerned timing: although total seasonal water input was held constant, dam segments produced lower immediate peak flow, longer periods of moderate release, wetter adjacent soil, more persistent side channels, and a delayed return to pre-rainfall conditions, with the strongest effects appearing where several dams occurred in sequence rather than as isolated structures.
 
@@ -74,9 +76,21 @@ Beavers provide a compact example of a general scholarly problem: a familiar obj
 
 The useful lesson is not that every beaver dam improves every watershed. It is that water, mud, vegetation, animals, and time can become connected through structures small enough to begin with one branch.
 
-## Acknowledgments
+## Codex and GPT-5.6 Use
 
-This fictional paper was created as public sample data for Scholar Audio. No beavers were asked to complete paperwork.
+Scholar Audio was built during OpenAI Build Week with Codex and GPT-5.6. I wanted to turn dense academic papers into structured listening material without uploading them to a cloud service, starting a free trial, or taking on another subscription.
+
+Codex helped me transform that process into a working local Mac tool: extracting document structure, preparing text for listening, generating voice previews, rendering chapter tracks, and assembling the final audiobook.
+
+GPT-5.6 helped reason through the listening experience itself: where scholarly prose needs slower speech, stronger section boundaries, and additional breathing room around new terms and repeated complex results.
+
+We tested those decisions by generating audio, listening for failures, and refining the pipeline. The document remains on the reader's Mac, and the finished chaptered audiobook can be played wherever the reader prefers.
+
+Bruce Stephenson reviewed the code and advised me along the way.
+
+No beavers were asked to complete paperwork in the production of this demonstration.
+
+[[slnc 6000]]
 
 ## References
 

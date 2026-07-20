@@ -29,6 +29,16 @@ class PlaybackTests(unittest.TestCase):
         thread.assert_called_once_with(target=ANY, daemon=True)
         thread.return_value.start.assert_called_once_with()
 
+    def test_starting_generation_can_stop_prepared_sample_playback(self) -> None:
+        sample = MagicMock()
+        sample.poll.return_value = None
+        web_app.PLAYBACK_PROCESS = sample
+
+        web_app.stop_playback()
+
+        sample.terminate.assert_called_once_with()
+        self.assertIsNone(web_app.PLAYBACK_PROCESS)
+
 
 if __name__ == "__main__":
     unittest.main()

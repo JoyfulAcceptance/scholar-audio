@@ -57,6 +57,7 @@ These are valuable only after the complete local listening loop and submission m
 - [ ] Add a user-editable pronunciation dictionary.
 - [ ] Explore emphasis for newly introduced terms when the selected voice supports it.
 - [ ] Improve detection of conceptual lists outside Results sections.
+- [ ] Give genuine source-paragraph boundaries roughly 100 milliseconds more breathing room than the current ordinary paragraph pause, scaled from the 130 WPM baseline.
 - [ ] Explore a brief pause between a complex sentence subject and its main predicate.
 - [ ] Add clearer treatment for tables, equations, figures, citations, and footnotes.
 - [ ] Let users inspect and lightly edit the prepared listening text before rendering.
@@ -117,6 +118,7 @@ Design rules:
 ### Interface
 
 - [ ] Add an About section explaining local processing, privacy, native voices, and optional Personal Voice use.
+- [ ] Add a post-submission “Save to Scholar Audio folder” action that automatically creates `~/Documents/Scholar Audio` and stores citation-named ZIP packets there instead of relying only on the browser's Downloads folder.
 - [ ] Show which embedded controls each installed voice appears to support.
 - [ ] Add a small voice-comparison or capability-testing tool.
 - [ ] Improve progress reporting for long papers without adding an in-app audiobook player.

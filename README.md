@@ -4,9 +4,15 @@ Scholar Audio turns scholarly PDFs and long articles into local, private listeni
 
 The goal is simple: drop in a PDF, choose a voice and pace, and generate a folder containing cleaned listening text, chapter audio tracks, and an audiobook file.
 
+[![Scholar Audio demo](https://img.youtube.com/vi/1JbygVl-S9c/0.jpg)](https://www.youtube.com/watch?v=1JbygVl-S9c)
+
+*Watch the 2-minute, 42-second self-narrated demonstration.*
+
 ## Built for OpenAI Build Week
 
-Scholar Audio was created during the OpenAI Build Week submission period, July 13–21, 2026. Before Build Week, I had tested a manual, multi-step process for turning scholarly papers into local audiobooks. During Build Week, Codex and GPT-5.6 helped me turn that experiment into the working software in this repository: the Python pipeline, adaptive pacing system, local browser interface, audiobook packaging, and automated tests. The repository history documents that development period.
+Scholar Audio was created during OpenAI Build Week, July 13–21, 2026. It is the first software application I have built. Before Build Week, I had worked extensively with Codex as a research, writing, and project collaborator, but I was not a programmer and had never translated an idea into working software.
+
+Before Build Week, I had tested a manual, multi-step process for turning scholarly papers into local audiobooks. I approached the build as product owner, workflow designer, listening tester, and final decision-maker. I described problems and desired behavior in ordinary language, evaluated each result, and directed revisions. Codex and GPT-5.6 translated that process into the Python pipeline, adaptive pacing system, local browser interface, audiobook packaging, and automated tests. The repository history documents that development period.
 
 ## Why This Exists
 

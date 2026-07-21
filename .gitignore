@@ -1,6 +1,7 @@
 __pycache__/
 .DS_Store
 .venv/
+.env.local
 dist/
 build/
 output/
